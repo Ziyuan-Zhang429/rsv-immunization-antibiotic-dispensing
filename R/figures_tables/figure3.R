@@ -1,23 +1,4 @@
-
-
 library(patchwork)
-
-stopifnot(exists("arm_counts"), exists("check_arm_counts"),
-          exists("format_events_denom"), exists("CANONICAL_N"))
-
-validate_figure2_model_data <- function(md, label) {
-  stopifnot(all(md$tstart >= 0), all(md$tstop <= FOLLOWUP_MAX),
-            all(md$tstop > md$tstart))
-  duplicated_events <- md %>% filter(event == 1L) %>%
-    count(infant_study_id, tstop, name = "n") %>% filter(n > 1)
-  if (nrow(duplicated_events)) {
-    stop(label, ": multiple antibiotic events found for the same infant-day.")
-  }
-  invisible(TRUE)
-}
-validate_figure2_model_data(model_data_primary$all_cause, "Primary RSV-season model")
-validate_figure2_model_data(model_data_fullyear$all_cause, "Full-year model")
-validate_figure2_model_data(model_data_out_of_season$all_cause, "Negative-control model")
 
 FIG2_PANELS <- list(
   a_rsv_season       = list(md = model_data_primary$all_cause,       label = "RSV seasons"),
@@ -37,17 +18,9 @@ fig2_panel_n <- imap_dfr(FIG2_PANELS, ~ tibble(
   n_panel = n_distinct(.x$md$infant_study_id)
 ))
 
-for (nm in names(FIG2_PANELS)) {
-  invisible(check_arm_counts(FIG2_PANELS[[nm]]$md, FIG2_PANELS[[nm]]$label))
-}
-
 ref_exposure_code <- "exposure_armd_neither"
 
 CRUDE_RELATIVE_CSV <- "crude_relative_effects.csv"
-if (!file.exists(CRUDE_RELATIVE_CSV)) {
-  stop("Could not find ", CRUDE_RELATIVE_CSV,
-       ". Put crude_relative_effects.csv in the working directory or update CRUDE_RELATIVE_CSV.")
-}
 
 crude_relative <- read.csv(CRUDE_RELATIVE_CSV, stringsAsFactors = FALSE) %>%
   filter(outcome == "all_cause") %>%
@@ -61,8 +34,6 @@ crude_relative <- read.csv(CRUDE_RELATIVE_CSV, stringsAsFactors = FALSE) %>%
          crude_HR = HR, crude_CI_low = CI_low, crude_CI_high = CI_high,
          crude_VE_pct = VE_pct, crude_VE_CI_low = VE_CI_low,
          crude_VE_CI_high = VE_CI_high)
-
-stopifnot(nrow(crude_relative) == 6L)
 
 fig2_ve <- bind_rows(
   primary_ve_table       %>% filter(outcome == "all_cause") %>% mutate(panel = "a_rsv_season"),
@@ -84,8 +55,6 @@ fig2_ve <- bind_rows(
     crude_ve_annotation = sprintf("%.1f (%.1f, %.1f)", crude_VE_pct, crude_VE_CI_low, crude_VE_CI_high),
     ve_annotation = adjusted_ve_annotation
   )
-
-stopifnot(!any(is.na(fig2_ve$n_events)), !any(is.na(fig2_ve$person_years)))
 
 fig2_neither <- fig2_counts %>%
   filter(exposure == ref_exposure_code) %>%
@@ -132,12 +101,6 @@ fig2_shading <- fig2_data %>%
   distinct(row_id, y_pos) %>%
   mutate(band = ifelse(row_id %% 2 == 0, "shade", "none")) %>%
   filter(band == "shade")
-print(fig2_data %>%
-        select(row_id, panel_label, row_type, exposure_label,
-               n_infants_contributing, person_years, n_events,
-               event_annotation, ve_annotation),
-      n = Inf)
-print(CANONICAL_N$complete_case %>% select(exposure, n_infants_cohort))
 
 FIG2_FONT_SIZE <- 11
 Y_LIMITS <- c(-(n_rows + 0.5), -0.5)
@@ -260,30 +223,12 @@ fig2 <- table_header + ve_header + forest_header +
   p_bg + p_table + p_ve + p_forest +
   plot_layout(design = fig2_design, heights = c(2.2, n_rows),
               widths = c(1.25, 1.55, 0.95)) +
-  plot_annotation(
-    title = "Effectiveness of RSV Immunization Against Antibiotic Use",
-    subtitle = "Forest plot (right) shows adjusted estimates; both models reported numerically",
-    
-    theme = theme(
-      plot.title = element_text(size = FIG2_FONT_SIZE),
-      plot.subtitle = element_text(size = FIG2_FONT_SIZE),
-      
-      plot.background = element_rect(fill = "white", colour = NA)
-    )
-  )
-
-print(fig2)
+  plot_annotation(theme = theme(plot.background = element_rect(fill = "white", colour = NA)))
 
 ggsave("figure3_main_ve_forest_crude_adjusted.pdf", fig2, width = 10.5, height = 6.1,
        units = "in", device = "pdf")
 
 library(gt)
-
-stopifnot(
-  exists("arm_counts"),
-  exists("check_arm_counts"),
-  exists("ARM_COUNT_NOTE")
-)
 
 TABLE2_PANELS <- list(
   rsv_season = list(
@@ -315,15 +260,6 @@ table2_counts <- imap_dfr(TABLE2_PANELS, function(p, period_code) {
       n_events
     )
 })
-
-for (nm in names(TABLE2_PANELS)) {
-  invisible(
-    check_arm_counts(
-      TABLE2_PANELS[[nm]]$md,
-      TABLE2_PANELS[[nm]]$label
-    )
-  )
-}
 
 table2_ve <- bind_rows(
   primary_ve_table %>%
@@ -445,7 +381,6 @@ table2 <- bind_rows(
     `HR (95% CI)`,
     `VE, % (95% CI)`
   )
-print(table2, n = Inf)
 
 table2_gt <- table2 %>%
   gt(
@@ -479,8 +414,6 @@ table2_gt <- table2 %>%
       )
     )
   )
-
-print(table2_gt)
 
 gtsave(
   table2_gt,

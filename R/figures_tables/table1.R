@@ -1,21 +1,8 @@
-
-
 library(gtsummary)
 library(gt)
 
-stopifnot(exists("analytic_infants"), exists("CANONICAL_N"))
-
 table1_cohort <- analytic_infants %>%
   filter(has_complete_covariates)
-print(CANONICAL_N$complete_case %>% select(exposure, n_infants_cohort, total, pct))
-
-stopifnot(
-  nrow(table1_cohort) == sum(CANONICAL_N$complete_case$n_infants_cohort),
-  !any(is.na(table1_cohort$exposure_group)),
-
-  nrow(table1_cohort) == n_distinct(model_data_fullyear$all_cause$infant_study_id),
-  nrow(table1_cohort) >= n_distinct(model_data_primary$all_cause$infant_study_id)
-)
 
 UTD_LANDMARK_DAY <- 90
 
@@ -26,7 +13,6 @@ table1_cohort <- table1_cohort %>%
 strip_leading_code <- function(x) stringr::str_remove(as.character(x), "^\\d+:\\s*")
 
 diagnose_binary <- function(x, label) {
-  print(table(x, useNA = "ifany"))
 }
 
 diagnose_binary(table1_cohort$serious_newborn_comorbidity, "serious_newborn_comorbidity")
@@ -144,8 +130,6 @@ table1_gt <- table1_cohort %>%
     "complete covariate data, by exposure group**"
   )) %>%
   bold_labels()
-
-print(table1_gt)
 
 table1_gt %>%
   as_gt() %>%

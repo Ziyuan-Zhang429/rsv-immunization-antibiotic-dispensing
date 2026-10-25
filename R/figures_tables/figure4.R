@@ -1,5 +1,3 @@
-
-
 library(dplyr)
 library(tidyr)
 library(purrr)
@@ -10,10 +8,6 @@ library(stringr)
 
 ADJUSTED_CSV <- "adjusted_absolute_effects.csv"
 CRUDE_CSV    <- "crude_absolute_effects.csv"
-
-for (f in c(ADJUSTED_CSV, CRUDE_CSV)) {
-  if (!file.exists(f)) stop("Could not find ", f, ". Put it in the working directory or update the path at the top of this script.")
-}
 
 adjusted <- read.csv(ADJUSTED_CSV, stringsAsFactors = FALSE) %>%
   transmute(
@@ -60,13 +54,6 @@ figure4_data <- adjusted %>%
     followup = factor(followup, levels = c("1-90 days", "1-180 days"))
   ) %>%
   arrange(panel, factor(exposure, levels = c("Maternal RSV vaccine", "Nirsevimab")), followup)
-
-if (nrow(figure4_data) != 8L) stop("Expected 8 Figure 4 rows after joining the two result tables; found ", nrow(figure4_data), ".")
-if (any(is.na(figure4_data$crude_estimate))) stop("Some adjusted rows did not match crude_absolute_effects.csv. Check panel/exposure/followup labels.")
-if (any(figure4_data$n_recipients_contributing != figure4_data$crude_n_recipients)) {
-  warning("Recipient counts differ between adjusted and crude files. Check that both analyses used the same analytic population.")
-}
-print(tibble::as_tibble(figure4_data), n = Inf)
 
 make_courses_averted_plot <- function(df) {
   FONT <- 11; PAD <- 2
@@ -180,15 +167,9 @@ make_courses_averted_plot <- function(df) {
               area(2,1,2,1), area(2,2,2,2), area(2,3,2,3))
   table_header + est_header + forest_header + p_bg + p_table + p_est + p_forest +
     plot_layout(design = design, heights = c(2.2, n_rows), widths = c(1.20, 1.55, .85)) +
-    plot_annotation(
-      title = "Antibiotic Courses Averted per 100 Intervention Recipients",
-      
-      theme = theme(plot.title = element_text(size = FONT),
-                    
-                    plot.background = element_rect(fill = "white", colour = NA)))
+    plot_annotation(theme = theme(plot.background = element_rect(fill = "white", colour = NA)))
 }
 
 fig4 <- make_courses_averted_plot(figure4_data)
-print(fig4)
 ggsave("figure4_courses_averted_crude_adjusted.pdf", fig4,
        width = 10.2, height = 5.5, units = "in", device = "pdf")

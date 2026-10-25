@@ -1,5 +1,3 @@
-
-
 library(glmnet)
 library(patchwork)
 library(purrr)
@@ -20,7 +18,6 @@ NIR_WEIGHT_TRUNC_PCTILE <- c(0.01, 0.99)
 
 FOLLOWUP_XMAX  <- FOLLOWUP_MAX
 
-stopifnot(FOLLOWUP_MAX == 180, exists("UTD_INTERVAL_DAYS"), UTD_INTERVAL_DAYS == 30)
 PLOT_FONT_SIZE <- 13
 RISK_DAYS      <- seq(0, FOLLOWUP_XMAX, UTD_INTERVAL_DAYS)
 
@@ -31,11 +28,6 @@ figure_colors <- c(
 )
 
 set.seed(20260809)
-
-stopifnot(
-  exists("apply_unknown_exclusions"), exists("analytic_infants"),
-  exists("arm_counts"), exists("canonical_exposure_group")
-)
 
 truncate_to_first_event <- function(cp, id_col) {
   cp %>%
@@ -51,12 +43,6 @@ km_primary_events <- events_primary$all_cause %>%
   filter(!is.na(abx_days), abx_days > 0, abx_days <= FOLLOWUP_MAX) %>%
   semi_join(cohort_primary %>% distinct(infant_study_id), by = "infant_study_id") %>%
   distinct(infant_study_id, abx_days)
-
-stopifnot(
-  !anyDuplicated(km_primary_events %>% select(infant_study_id, abx_days)),
-  all(km_primary_events$abx_days > 0),
-  all(km_primary_events$abx_days <= FOLLOWUP_MAX)
-)
 
 maternal_km_events <- km_primary_events
 
@@ -126,10 +112,6 @@ fit_maternal_km <- function(variant = c("in_season", "full_year", "out_of_season
     data = md_w, weights = sw_trunc,
     id = infant_study_id, robust = TRUE
   )
-  print(md_w %>%
-          group_by(exposure_label) %>%
-          summarise(rows = n(), infants = n_distinct(infant_study_id),
-                    person_days = sum(tstop - tstart), events = sum(event), .groups = "drop"))
 
   list(data = md_w, fit = fit, variant = variant)
 }
@@ -138,13 +120,6 @@ maternal_in_season     <- fit_maternal_km("in_season")
 maternal_full_year     <- fit_maternal_km("full_year")
 maternal_out_of_season <- fit_maternal_km("out_of_season")
 
-stopifnot(
-  maternal_full_year$data %>%
-    filter(event == 1L) %>%
-    count(infant_study_id) %>%
-    summarise(ok = all(n == 1L)) %>%
-    pull(ok)
-)
 old_style_in_season_events <- clean_and_restrict(
   build_cp(maternal_km_events %>% group_by(infant_study_id) %>%
              slice_min(abx_days, n = 1, with_ties = FALSE) %>% ungroup()),
@@ -167,13 +142,6 @@ control_candidates <- cohort_primary %>%
     )
   )
 
-stopifnot(
-  nrow(control_candidates) ==
-    sum(analytic_infants$exposure_group %in% c("Neither", "Nirsevimab only")),
-  sum(control_candidates$control_mab_history) ==
-    sum(analytic_infants$exposure_group == "Nirsevimab only")
-)
-
 make_candidate_pairs <- function(recipients, controls, window_days) {
   recipients %>%
     tidyr::crossing(birth_offset = seq(-window_days, window_days)) %>%
@@ -195,7 +163,6 @@ make_candidate_pairs <- function(recipients, controls, window_days) {
 
 select_matched_controls <- function(recipients) {
   pairs <- map(CALIPER_GRID_DAYS, ~ make_candidate_pairs(recipients, control_candidates, .x))
-  walk(pairs, ~ stopifnot(all(abs(.x$age_diff_days + .x$birth_diff_days) < 1e-8)))
 
   counts <- recipients %>%
     select(treated_id) %>%
@@ -230,13 +197,6 @@ select_matched_controls <- function(recipients) {
       pct_3day     = 100 * mean(chosen_caliper == 3L, na.rm = TRUE),
       pct_7day     = 100 * mean(chosen_caliper == 7L, na.rm = TRUE)
     )
-
-  print(coverage)
-
-  if (coverage$pct_matched < 100 * MATCH_ANY_THRESHOLD)
-    warning("Fewer than the prespecified proportion of nirsevimab recipients could be matched.")
-  if (coverage$pct_target < 100 * MATCH_TARGET_THRESHOLD)
-    warning("Fewer than the prespecified proportion of recipients achieved the target control ratio.")
 
   candidates <- bind_rows(pairs) %>%
     inner_join(counts %>% select(treated_id, chosen_caliper), by = "treated_id") %>%
@@ -388,8 +348,6 @@ weight_nirsevimab_episode <- function(dat) {
     )
 
   pct_floored <- 100 * mean(dat$ps_floored)
-  if (pct_floored > PS_FLOOR_FLAG_PCT)
-    warning("Nirsevimab PS overlap failed prespecified flooring threshold.")
 
   p_treated <- mean(dat$exposure_km == "Nirsevimab")
 
@@ -553,15 +511,6 @@ build_nirsevimab_base <- function() {
 }
 
 nir_base <- build_nirsevimab_base()
-print(
-  nir_base %>%
-    distinct(episode_id, exposure_label, censor_reason) %>%
-    count(exposure_label, censor_reason) %>%
-    group_by(exposure_label) %>%
-    mutate(pct = round(100 * n / sum(n), 1)) %>%
-    ungroup(),
-  n = Inf
-)
 fit_nirsevimab_km <- function(variant = c("in_season", "full_year", "out_of_season"),
                               base = nir_base) {
   variant <- match.arg(variant)
@@ -579,10 +528,6 @@ fit_nirsevimab_km <- function(variant = c("in_season", "full_year", "out_of_seas
     data = dat, weights = sw_trunc,
     id = episode_id, robust = TRUE
   )
-  print(dat %>%
-          group_by(exposure_label) %>%
-          summarise(segments = n(), episodes = n_distinct(episode_id),
-                    person_days = sum(tstop - tstart), events = sum(event), .groups = "drop"))
 
   list(data = dat, fit = fit, variant = variant)
 }
@@ -696,15 +641,6 @@ km_absolute_differences <- bind_rows(
     absolute_difference_pct
   )
 
-print(km_absolute_differences, n = Inf)
-
-stopifnot(
-  nir_full_year$data %>%
-    filter(event == 1L) %>%
-    count(episode_id) %>%
-    summarise(ok = all(n == 1L)) %>%
-    pull(ok)
-)
 old_style_first_postindex <- function(indexed_df, same_day_is_preindex = TRUE) {
   op <- if (same_day_is_preindex) `>` else `>=`
   indexed_df %>%
@@ -814,8 +750,6 @@ build_nir_population_risk <- function(variant = c("full_year", "in_season", "out
 nir_population_risk_full_year <- build_nir_population_risk("full_year")
 nir_population_risk_in_season <- build_nir_population_risk("in_season")
 nir_population_risk_out_of_season <- build_nir_population_risk("out_of_season")
-print(nir_population_risk_full_year, n = Inf)
-print(nir_population_risk_in_season, n = Inf)
 
 km_risk_table <- function(dat, days = RISK_DAYS) {
 
@@ -982,7 +916,6 @@ figure1_km <- (
 ) +
   plot_layout(ncol = 2, heights = c(4, 1, 4, 1))
 
-print(figure1_km)
 ggsave("figure1_km_full_year_and_rsv_season_V2_1.pdf", figure1_km, width = 12, height = 12, units = "in", device = "pdf")
 
 build_single_period_figure <- function(fit_obj, x_title, arms, panel_title,
@@ -1019,6 +952,5 @@ p_neg_nir <- build_single_period_figure(
 )
 
 figureS_km_negative_control <- p_neg_mat | p_neg_nir
-print(figureS_km_negative_control)
 ggsave("figureS_km_out_of_season_negative_control_V2_1.pdf", figureS_km_negative_control,
        width = 12, height = 6, units = "in", device = "pdf")

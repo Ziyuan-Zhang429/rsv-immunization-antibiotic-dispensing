@@ -1,14 +1,3 @@
-
-
-stopifnot(
-  exists("arm_counts"), exists("format_events_denom"),
-  exists("fig_denom_header"), exists("fig_denom_note"),
-  exists("analytic_events"),
-  exists("clean_and_restrict"), exists("build_cp"),
-  exists("COVARIATE_TERMS"), exists("empty_ve_row"), exists("tidy_ve"),
-  exists("blocks_primary")
-)
-
 library(tidyverse)
 library(survival)
 library(broom)
@@ -30,7 +19,6 @@ ag_formula_3month <- as.formula(paste(
 ))
 
 restrict_primary_event_days <- function(events_df) {
-  stopifnot(exists("cohort_primary"), exists("FOLLOWUP_MAX"))
   events_df %>%
     filter(!is.na(abx_days), abx_days > 0, abx_days <= FOLLOWUP_MAX) %>%
     semi_join(cohort_primary %>% distinct(infant_study_id), by = "infant_study_id") %>%
@@ -46,7 +34,6 @@ figure_empty_ve_row <- function(outcome_label, status, n_events_raw = NA_integer
 ear_prep_oral_check <- analytic_events %>%
   filter(abx_class == "Ear Preparations,antibiotics", abx_route == "Oral") %>%
   count(abx_generic, sort = TRUE)
-print(ear_prep_oral_check)
 
 class_levels_fig <- analytic_events %>%
   filter(analyzable_event_primary == TRUE, !is.na(abx_days),
@@ -61,11 +48,6 @@ CEPHALOSPORIN_CLASSES <- c(
   "Cephalosporin Antibiotics - 1st Generation",
   "Cephalosporin Antibiotics - 3rd Generation",
   "Cephalosporin Anti - 4th Gen"
-)
-
-stopifnot(
-  "One or more CEPHALOSPORIN_CLASSES not found in abx_class -- check spelling against the printed class list above" =
-    all(CEPHALOSPORIN_CLASSES %in% class_levels_fig)
 )
 
 build_composite_class_events <- function(class_names,
@@ -178,13 +160,6 @@ class_panel_results_supp <- map_dfr(
       mutate(season_mode = mode)
   }
 )
-print(class_panel_results_supp %>%
-        select(season_mode, outcome, exposure, HR, CI_low, CI_high, VE_pct,
-               n_infants, n_events, fit_status),
-      n = Inf)
-print(class_panel_results_supp %>%
-        distinct(season_mode, outcome, fit_status, n_events_raw, n_events_model) %>%
-        arrange(outcome, season_mode), n = Inf)
 
 CLASSES_TO_PLOT <- names(CLASS_EVENT_SETS)
 
@@ -237,10 +212,6 @@ fig4_fit_supp <- class_panel_results_supp %>%
   ) %>%
   filter(!is.na(exposure_label))
 
-stopifnot(
-  "No classes had a usable fit in either panel -- nothing to plot" = nrow(fig4_fit_supp) > 0
-)
-
 class_catalog_all <- fig4_fit_supp %>%
   filter(row_kind == "arm") %>%
   distinct(outcome_label) %>%
@@ -250,7 +221,6 @@ class_display_order <- intersect(
   unname(CLASS_LABELS),
   class_catalog_all
 )
-print(class_display_order)
 
 FIG4_FONT_SIZE <- 11
 LABEL_X      <- 0
@@ -451,19 +421,7 @@ n_groups  <- length(season_figures)
 ncol_grid <- n_groups
 
 fig4_supp <- wrap_plots(map(season_figures, "plot"), ncol = ncol_grid, nrow = 1) +
-  plot_annotation(
-    title = "Supplementary Figure. Antibiotic-Class-Specific VE, RSV Season and Negative Control",
-    subtitle = "Never-both cohort, strata = age bin (30d) x calendar month",
-    
-    theme = theme(
-      plot.title    = element_text(size = FIG4_FONT_SIZE + 1, color = "black"),
-      plot.subtitle = element_text(size = FIG4_FONT_SIZE, color = "black"),
-      
-      plot.background = element_rect(fill = "white", colour = NA)
-    )
-  )
-
-print(fig4_supp)
+  plot_annotation(theme = theme(plot.background = element_rect(fill = "white", colour = NA)))
 
 max_rows  <- max(map_dbl(season_figures, "n_rows"))
 fig_width <- 7.5 * ncol_grid

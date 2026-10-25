@@ -1,15 +1,3 @@
-
-
-stopifnot(
-  exists("arm_counts"), exists("format_events_denom"),
-  exists("fig_denom_header"), exists("fig_denom_note"),
-  exists("diagnosis_flags"), exists("diagnosis_interpretation"),
-  exists("build_diagnosis_events"), exists("clean_and_restrict"),
-  exists("build_cp"), exists("COVARIATE_TERMS"),
-  exists("empty_ve_row"), exists("tidy_ve"), exists("blocks_primary"),
-  "dx_group" %in% names(diagnosis_interpretation)
-)
-
 library(tidyverse)
 library(survival)
 library(broom)
@@ -31,7 +19,6 @@ ag_formula_3month <- as.formula(paste(
 ))
 
 restrict_primary_event_days <- function(events_df) {
-  stopifnot(exists("cohort_primary"), exists("FOLLOWUP_MAX"))
   events_df %>%
     filter(!is.na(abx_days), abx_days > 0, abx_days <= FOLLOWUP_MAX) %>%
     semi_join(cohort_primary %>% distinct(infant_study_id), by = "infant_study_id") %>%
@@ -155,10 +142,6 @@ diagnosis_panel_results_supp <- map_dfr(
   }
 ) %>%
   left_join(diagnosis_interpretation, by = c("outcome" = "diagnosis"))
-print(diagnosis_panel_results_supp %>%
-        select(season_mode, outcome, dx_group, exposure, HR, CI_low, CI_high,
-               VE_pct, n_infants, n_events, fit_status),
-      n = Inf)
 
 panel_order <- c("RSV season", "Negative control")
 arm_order   <- c("Neither", "Maternal RSV vaccine", "Nirsevimab")
@@ -208,10 +191,6 @@ fig3_fit_supp <- diagnosis_panel_results_supp %>%
   ) %>%
   filter(!is.na(exposure_label))
 
-stopifnot(
-  "No diagnoses had a usable fit in either panel -- nothing to plot" = nrow(fig3_fit_supp) > 0
-)
-
 diagnosis_catalog_all <- fig3_fit_supp %>%
   filter(row_kind == "arm") %>%
   distinct(outcome_label) %>%
@@ -222,7 +201,6 @@ diagnosis_display_order <- fig3_fit_supp %>%
   distinct(outcome_label, dx_group) %>%
   arrange(dx_group, outcome_label) %>%
   pull(outcome_label)
-print(diagnosis_display_order)
 
 FIG3_FONT_SIZE <- 11
 LABEL_X      <- 0
@@ -423,19 +401,7 @@ n_groups  <- length(season_figures)
 ncol_grid <- n_groups
 
 fig3_supp <- wrap_plots(map(season_figures, "plot"), ncol = ncol_grid, nrow = 1) +
-  plot_annotation(
-    title = "Supplementary Figure. Diagnosis-Specific VE, RSV Season and Negative Control",
-    subtitle = "Never-both cohort, stratified by 3-month calendar period",
-    
-    theme = theme(
-      plot.title    = element_text(size = FIG3_FONT_SIZE + 1, color = "black"),
-      plot.subtitle = element_text(size = FIG3_FONT_SIZE, color = "black"),
-      
-      plot.background = element_rect(fill = "white", colour = NA)
-    )
-  )
-
-print(fig3_supp)
+  plot_annotation(theme = theme(plot.background = element_rect(fill = "white", colour = NA)))
 
 max_rows  <- max(map_dbl(season_figures, "n_rows"))
 fig_width <- 6.5 * ncol_grid

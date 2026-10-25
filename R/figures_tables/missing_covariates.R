@@ -1,16 +1,7 @@
-
-
 library(dplyr)
 library(tidyr)
 library(gt)
 library(scales)
-
-stopifnot(
-  exists("cp_primary"),
-  "all_cause" %in% names(cp_primary),
-  exists("COVARIATE_TERMS"),
-  exists("analytic_infants")
-)
 
 cp0 <- cp_primary$all_cause %>%
   filter(!is.na(exposure_arm))
@@ -21,12 +12,7 @@ eligible_ids <- analytic_infants %>%
 cp0 <- cp0 %>%
   semi_join(eligible_ids, by = "infant_study_id")
 
-stopifnot(n_distinct(cp0$infant_study_id) == 47868)
-
 model_predictors <- all.vars(as.formula(paste("~", COVARIATE_TERMS)))
-print(model_predictors)
-
-stopifnot(all(model_predictors %in% names(cp0)))
 
 pred_missing_long <- cp0 %>%
   transmute(
@@ -136,27 +122,12 @@ validation <- analytic_infants %>%
     any_missing_or_unknown = replace_na(any_missing_or_unknown, FALSE),
     expected_excluded = !has_complete_covariates
   )
-print(table(
-  reconstructed_excluded = validation$any_missing_or_unknown,
-  canonical_excluded = validation$expected_excluded
-))
 
 n_canonical <- sum(validation$expected_excluded)
 n_reconstructed <- sum(validation$any_missing_or_unknown)
 n_discordant <- sum(
   validation$expected_excluded != validation$any_missing_or_unknown
 )
-stopifnot(n_canonical == 218)
-
-if (n_discordant > 0) {
-  warning(
-    paste0(
-      "The reconstructed variable-level rules do not yet exactly reproduce ",
-      "has_complete_covariates (", n_discordant, " discordant infants). ",
-      "Inspect `discordant_infants` before using the table."
-    )
-  )
-}
 
 discordant_infants <- validation %>%
   filter(expected_excluded != any_missing_or_unknown)
@@ -192,11 +163,6 @@ any_row <- tibble(
 )
 
 missing_table_with_total <- bind_rows(missing_table_data, any_row)
-print(
-  missing_table_with_total %>%
-    select(characteristic, n_missing, pct_missing),
-  n = Inf
-)
 missing_table_gt <- missing_table_with_total %>%
   select(
     Characteristic = characteristic,

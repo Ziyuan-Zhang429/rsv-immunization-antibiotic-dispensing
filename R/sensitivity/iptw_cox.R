@@ -1,3 +1,4 @@
+# Iptw cox
 
 
 stopifnot(exists('model_data_primary'), exists('model_data_fullyear'),
@@ -126,6 +127,7 @@ expand_ag <- function(md) {
   x
 }
 
+# Fit models for a specified follow-up period
 run_period <- function(md,label) {
   x <- expand_ag(md)
   x <- merge(x,base[,.(infant_study_id,maternal,w_m)],by='infant_study_id',all.x=TRUE,sort=FALSE)

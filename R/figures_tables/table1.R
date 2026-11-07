@@ -1,3 +1,4 @@
+# Summarize baseline maternal and infant characteristics
 library(gtsummary)
 library(gt)
 

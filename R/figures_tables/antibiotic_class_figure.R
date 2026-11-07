@@ -1,3 +1,4 @@
+# Antibiotic class figure
 library(tidyverse)
 library(survival)
 library(broom)
@@ -50,6 +51,7 @@ CEPHALOSPORIN_CLASSES <- c(
   "Cephalosporin Anti - 4th Gen"
 )
 
+# Build composite class events
 build_composite_class_events <- function(class_names,
                                          analyzable_col = "analyzable_event_primary") {
 
@@ -62,6 +64,7 @@ build_composite_class_events <- function(class_names,
 
 cephalosporin_composite_events <- build_composite_class_events(CEPHALOSPORIN_CLASSES)
 
+# Fit antibiotic class-specific effectiveness estimates
 fit_class_outcome_panel_supp <- function(outcome_events, outcome_label,
                                     formula = ag_formula_3month,
                                     blocks = blocks_primary,
@@ -237,6 +240,7 @@ transparent_bg <- theme(
   plot.background  = element_rect(fill = "transparent", colour = NA)
 )
 
+# Assemble RSV-season figure panels
 build_season_figure <- function(season_lbl) {
 
   dx_in_group <- class_display_order

@@ -1,3 +1,4 @@
+# Immortal time
 
 
 rm(list = ls())
@@ -33,6 +34,7 @@ if (length(missing_objects) > 0) {
 
 all_cause_events <- events_primary$all_cause
 
+# Fit three periods
 fit_three_periods <- function(cp, sensitivity_label) {
 
   period_data <- list(

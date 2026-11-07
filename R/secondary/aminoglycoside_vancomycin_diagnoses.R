@@ -1,3 +1,4 @@
+# Aminoglycoside vancomycin diagnoses
 
 
 library(tidyverse)
@@ -152,6 +153,7 @@ c6_event_counts <- c6_events %>%
   )
 print(c6_event_counts)
 
+# Summarize diagnoses linked to selected antibiotic classes
 summarize_c6_diagnoses <- function(data, class_name) {
 
   d <- data %>%

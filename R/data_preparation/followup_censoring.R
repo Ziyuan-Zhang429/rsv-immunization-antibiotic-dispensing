@@ -1,3 +1,4 @@
+# Followup censoring
 
 
 suppressPackageStartupMessages({library(dplyr);library(readr);library(haven);library(purrr);library(survival)})

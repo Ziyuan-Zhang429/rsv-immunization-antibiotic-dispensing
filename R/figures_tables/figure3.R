@@ -1,3 +1,4 @@
+# Plot relative effectiveness estimates
 library(patchwork)
 
 FIG2_PANELS <- list(

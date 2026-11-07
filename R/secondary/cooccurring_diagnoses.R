@@ -1,3 +1,4 @@
+# Cooccurring diagnoses
 
 
 library(tidyverse)
@@ -118,6 +119,7 @@ overall_diagnosis_linkage <- c5_event_days %>%
   )
 print(overall_diagnosis_linkage, n = Inf)
 
+# Tabulate diagnoses accompanying antibiotic dispensing
 make_cooccurrence_table <- function(data, index_flag, index_label) {
 
   if (!index_flag %in% diagnosis_flags) {

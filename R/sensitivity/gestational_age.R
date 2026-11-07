@@ -1,3 +1,4 @@
+# Gestational age
 
 
 suppressPackageStartupMessages({
@@ -141,6 +142,7 @@ out_of_season_ve_table_ga <- imap_dfr(
   ~ tidy_ve(.x, .y)
 )
 
+# Make comparison
 make_comparison <- function(original, ga_adjusted, period_label) {
   original %>%
     select(
@@ -228,6 +230,7 @@ strat_formula <- as.formula(paste(
   original_covariate_terms
 ))
 
+# Estimate effects within a gestational-age group
 fit_one_ga_group <- function(dat, label) {
   fit <- coxph(
     strat_formula,

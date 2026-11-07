@@ -1,3 +1,4 @@
+# Antibiotic class exclusions
 
 
 library(tidyverse)
@@ -161,6 +162,7 @@ walk(md_no_amino_vanc, function(md) {
   )
 })
 
+# Fit the specified sensitivity model
 fit_sensitivity_model <- function(md, period_label) {
 
   fit <- fit_ag(md)

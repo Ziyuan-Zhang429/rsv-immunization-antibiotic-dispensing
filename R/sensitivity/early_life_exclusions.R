@@ -1,3 +1,4 @@
+# Early life exclusions
 
 
 stopifnot(
@@ -22,6 +23,7 @@ EARLY_EXCLUSION_WINDOWS <- tribble(
 
 print(EARLY_EXCLUSION_WINDOWS)
 
+# Exclude early person-time using delayed entry
 apply_delayed_entry <- function(md, cutoff) {
   stopifnot(
     is.numeric(cutoff),
@@ -90,6 +92,7 @@ early_md_oos <- map(
 )
 names(early_md_oos) <- EARLY_EXCLUSION_WINDOWS$window_code
 
+# Check delayed-entry intervals
 validate_delayed_entry <- function(md_list, period_label) {
   imap(md_list, function(md, nm) {
     cutoff <- EARLY_EXCLUSION_WINDOWS %>%
@@ -120,6 +123,7 @@ validate_delayed_entry(early_md_rsv,  "RSV seasons")
 validate_delayed_entry(early_md_full, "Full year")
 validate_delayed_entry(early_md_oos,  "Non-RSV seasons")
 
+# Summarize window
 summarize_window <- function(md_list, period_label) {
   imap_dfr(md_list, function(md, nm) {
     spec <- EARLY_EXCLUSION_WINDOWS %>% filter(window_code == nm)
@@ -180,6 +184,7 @@ print(
   n = Inf
 )
 
+# Fit models across delayed-entry windows
 fit_window_models <- function(md_list, period_label) {
   imap_dfr(md_list, function(md, nm) {
     spec <- EARLY_EXCLUSION_WINDOWS %>% filter(window_code == nm)

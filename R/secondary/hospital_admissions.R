@@ -1,3 +1,4 @@
+# Hospital admissions
 
 
 suppressPackageStartupMessages({
@@ -161,6 +162,7 @@ stopifnot(all(cp_risk$tstop > cp_risk$tstart))
 
 periods <- c('full_year','RSV_season','non_RSV_season')
 crude_formula <- Surv(tstart,tstop,event) ~ exposure_arm + strata(calendar_month)
+# Fit models within the selected period
 fit_period <- function(period) {
   md <- clean_and_restrict(cp_risk,
     restrict_to_season = (period == 'RSV_season'),

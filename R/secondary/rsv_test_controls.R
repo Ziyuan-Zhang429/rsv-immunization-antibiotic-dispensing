@@ -1,3 +1,4 @@
+# Analyze RSV test-based control outcomes
 
 
 suppressPackageStartupMessages({
@@ -545,6 +546,7 @@ write_csv(
   file.path(OUTPUT_DIR, "qa_all_antibiotic_control_event_sets.csv")
 )
 
+# Make status event set
 make_status_event_set <- function(status, flag = "selected_ari") {
   if (!flag %in% c("selected_ari", "lrti", SELECTED_ARI_FLAGS)) {
     stop("Unknown outcome flag: ", flag)
@@ -728,6 +730,7 @@ format_exposure <- function(x) {
   )
 }
 
+# Fit models for control outcomes
 fit_control_outcome <- function(
     events_df,
     outcome_name,

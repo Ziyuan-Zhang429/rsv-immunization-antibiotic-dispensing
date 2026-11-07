@@ -1,3 +1,4 @@
+# Dispensing stacked
 suppressPackageStartupMessages({
   library(dplyr)
   library(tidyr)
@@ -67,6 +68,7 @@ plot_data <- bind_rows(
     antibiotic_group = factor(antibiotic_group, levels = class_levels)
   )
 
+# Plot the distribution of dispensing outcomes
 make_stacked_plot <- function(max_day = 90L) {
   ggplot(filter(plot_data, abx_days <= max_day),
          aes(x = abx_days, fill = antibiotic_group)) +

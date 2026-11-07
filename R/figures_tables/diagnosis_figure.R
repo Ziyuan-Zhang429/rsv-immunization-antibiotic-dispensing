@@ -1,3 +1,4 @@
+# Diagnosis figure
 library(tidyverse)
 library(survival)
 library(broom)
@@ -54,6 +55,7 @@ DIAGNOSES_TO_DROP <- c("asthma_allergy_yn", "nsup_om", "bacterial_infection_yn",
 
 diagnosis_flags_fig <- setdiff(diagnosis_flags, DIAGNOSES_TO_DROP)
 
+# Fit diagnosis-specific effectiveness estimates
 fit_single_outcome_panel_supp <- function(outcome_events, outcome_label,
                                      formula = ag_formula_3month,
                                      blocks = blocks_primary,
@@ -217,6 +219,7 @@ transparent_bg <- theme(
   plot.background  = element_rect(fill = "transparent", colour = NA)
 )
 
+# Assemble RSV-season figure panels
 build_season_figure <- function(season_lbl) {
 
   dx_in_group <- diagnosis_display_order

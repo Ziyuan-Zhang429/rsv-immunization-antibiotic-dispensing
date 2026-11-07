@@ -1,3 +1,4 @@
+# Poisson negative binomial
 
 
 suppressPackageStartupMessages({
@@ -17,6 +18,7 @@ NBP_OUTPUT_DIR <- "NB_Poisson_all_periods_results"
 NBP_RUN_NB <- TRUE
 NBP_RUN_POISSON <- TRUE
 
+# Fit models for a specified follow-up period
 run_period <- function(input_data, period, period_slug) {
 raw <- input_data %>%
   mutate(.source_row = row_number())
@@ -94,6 +96,7 @@ if (NBP_RUN_POISSON) {
 
 nb_fit_method <- NA_character_
 nb_theta_bounds <- c(0.05, 1000)
+# Fit a negative-binomial model with stability checks
 fit_nb_stable <- function(formula, dat, poisson_fit) {
   ordinary <- tryCatch(
     suppressWarnings(MASS::glm.nb(formula, data = dat,

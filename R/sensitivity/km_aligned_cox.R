@@ -1,3 +1,4 @@
+# Km aligned cox
 
 
 library(splines)
@@ -42,6 +43,7 @@ period_subset <- function(x, period, season_column = "in_season") {
   stop("Unknown period: ", period)
 }
 
+# Fit two arm ag
 fit_two_arm_ag <- function(md, exposure_col, exposed_level, period,
                            analysis, use_weights = FALSE, match_strata = FALSE) {
 
@@ -133,6 +135,7 @@ mat_cp <- cp_all_cause_recurrent %>%
                         TRUE ~ NA_character_))
 stopifnot(!anyNA(mat_cp$subsequent_mab_day))
 
+# Make maternal
 make_maternal <- function(period, censor_at_mab=FALSE) {
   x <- period_subset(mat_cp, period)
   if (censor_at_mab) {

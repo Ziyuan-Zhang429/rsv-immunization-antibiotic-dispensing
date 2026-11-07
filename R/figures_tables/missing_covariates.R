@@ -1,3 +1,4 @@
+# Summarize missingness in adjustment variables
 library(dplyr)
 library(tidyr)
 library(gt)

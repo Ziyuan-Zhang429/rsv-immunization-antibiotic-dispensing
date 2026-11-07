@@ -1,3 +1,4 @@
+# Construct weighted first-event Kaplan-Meier curves
 library(glmnet)
 library(patchwork)
 library(purrr)
@@ -47,6 +48,7 @@ km_primary_events <- events_primary$all_cause %>%
 maternal_km_events <- km_primary_events
 
 cp_all_cause_recurrent <- build_cp(maternal_km_events)
+# Estimate maternal-vaccination propensity weights
 build_maternal_weights <- function(md, trunc_pctile = WEIGHT_TRUNC_PCTILE) {
   md <- md %>%
     filter(exposure_arm %in% c("d_neither", "a_maternal_vax_only")) %>%
@@ -90,6 +92,7 @@ build_maternal_weights <- function(md, trunc_pctile = WEIGHT_TRUNC_PCTILE) {
   md
 }
 
+# Fit weighted maternal-vaccination survival curves
 fit_maternal_km <- function(variant = c("in_season", "full_year", "out_of_season")) {
   variant <- match.arg(variant)
 
@@ -142,6 +145,7 @@ control_candidates <- cohort_primary %>%
     )
   )
 
+# Make candidate pairs
 make_candidate_pairs <- function(recipients, controls, window_days) {
   recipients %>%
     tidyr::crossing(birth_offset = seq(-window_days, window_days)) %>%
@@ -161,6 +165,7 @@ make_candidate_pairs <- function(recipients, controls, window_days) {
     )
 }
 
+# Select matched unexposed controls
 select_matched_controls <- function(recipients) {
   pairs <- map(CALIPER_GRID_DAYS, ~ make_candidate_pairs(recipients, control_candidates, .x))
 
@@ -213,6 +218,7 @@ select_matched_controls <- function(recipients) {
   list(matched = matched, counts = counts, coverage = coverage)
 }
 
+# Build all postindex abx
 build_all_postindex_abx <- function(indexed_df, same_day_is_preindex = TRUE) {
   op <- if (same_day_is_preindex) `>` else `>=`
 
@@ -224,6 +230,7 @@ build_all_postindex_abx <- function(indexed_df, same_day_is_preindex = TRUE) {
     distinct(episode_id, abx_day_since_index)
 }
 
+# Build nirsevimab indexed unified
 build_nirsevimab_indexed_unified <- function() {
   recipients <- cohort_primary %>%
     filter(
@@ -332,6 +339,7 @@ nir_ps_formula <- as.formula(paste(
   "tot_covid + gbs_prior + utd_status + lb_prior + any_prior_abx"
 ))
 
+# Calculate weights for nirsevimab episodes
 weight_nirsevimab_episode <- function(dat) {
   predictors <- all.vars(as.formula(paste("~", as.character(nir_ps_formula)[3])))
   complete <- complete.cases(dat[, predictors, drop = FALSE])
@@ -364,6 +372,7 @@ weight_nirsevimab_episode <- function(dat) {
   dat
 }
 
+# Build nir recurrent segments
 build_nir_recurrent_segments <- function(indexed_df) {
 
   abx <- build_all_postindex_abx(
@@ -501,6 +510,7 @@ build_nir_recurrent_segments <- function(indexed_df) {
     select(-cutpoint)
 }
 
+# Build nirsevimab base
 build_nirsevimab_base <- function() {
   indexed <- build_nirsevimab_indexed_unified() %>%
     add_nir_covariates() %>%
@@ -511,6 +521,7 @@ build_nirsevimab_base <- function() {
 }
 
 nir_base <- build_nirsevimab_base()
+# Fit nirsevimab km
 fit_nirsevimab_km <- function(variant = c("in_season", "full_year", "out_of_season"),
                               base = nir_base) {
   variant <- match.arg(variant)
@@ -660,6 +671,7 @@ old_indexed <- build_nirsevimab_indexed_unified() %>%
   )
 old_style_in_season_events <- sum(old_indexed$event_old_in_season, na.rm = TRUE)
 new_style_in_season_events <- sum(nir_in_season$data$event)
+# Build nir population risk
 build_nir_population_risk <- function(variant = c("full_year", "in_season", "out_of_season"),
                                       days = RISK_DAYS) {
   variant <- match.arg(variant)
@@ -842,6 +854,7 @@ auto_y_scale <- function(...) {
   list(y_max = y_max, y_breaks = seq(0, y_max - 0.02, 0.02))
 }
 
+# Build period stack
 build_period_stack <- function(full_year_obj, in_season_obj, x_title, arms,
                                top_label = "Full year",
                                bottom_label = "RSV season",
@@ -918,6 +931,7 @@ figure1_km <- (
 
 ggsave("figure1_km_full_year_and_rsv_season_V2_1.pdf", figure1_km, width = 12, height = 12, units = "in", device = "pdf")
 
+# Build single period figure
 build_single_period_figure <- function(fit_obj, x_title, arms, panel_title,
                                        y_max, y_breaks, display_risk = NULL) {
   curve <- extract_km_curve(fit_obj$fit, fit_obj$data, arms = arms, xmax = FOLLOWUP_XMAX)

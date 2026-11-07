@@ -1,3 +1,4 @@
+# Assess alternative antibiotic-event washout periods
 
 
 library(tidyverse)
@@ -66,6 +67,7 @@ print(gap_distribution)
 
 cp_washout <- map(washout_events, build_cp)
 
+# Make period datasets
 make_period_datasets <- function(cp) {
   list(
     rsv_season = clean_and_restrict(
@@ -98,6 +100,7 @@ walk(model_data_washout, function(period_list) {
   })
 })
 
+# Fit one period
 fit_one_period <- function(md, period_label, washout_days) {
   fit <- fit_ag(md)
 

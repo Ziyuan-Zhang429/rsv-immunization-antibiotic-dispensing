@@ -1,3 +1,4 @@
+# Plot absolute antibiotic courses averted
 library(dplyr)
 library(tidyr)
 library(purrr)
@@ -55,6 +56,7 @@ figure4_data <- adjusted %>%
   ) %>%
   arrange(panel, factor(exposure, levels = c("Maternal RSV vaccine", "Nirsevimab")), followup)
 
+# Plot standardized absolute-effect estimates
 make_courses_averted_plot <- function(df) {
   FONT <- 11; PAD <- 2
   panel_order <- c("Full year", "RSV season")

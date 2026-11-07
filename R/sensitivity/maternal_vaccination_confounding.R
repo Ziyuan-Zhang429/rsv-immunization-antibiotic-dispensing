@@ -1,3 +1,4 @@
+# Maternal vaccination confounding
 
 
 library(tidyverse)
@@ -40,6 +41,7 @@ COV_NO_VAX <- paste(
   "tot_covid + gbs_prior + lb_prior"
 )
 
+# Make ag formula
 make_ag_formula <- function(covariates) {
   as.formula(paste(
     "Surv(tstart, tstop, event) ~ exposure_arm + strata(calendar_month) +",
@@ -148,6 +150,7 @@ stopifnot(
     all(TARGET_CLASSES_R3 %in% class_levels_r3)
 )
 
+# Build r3 class events
 build_r3_class_events <- function(class_names) {
   analytic_events %>%
     filter(
@@ -195,6 +198,7 @@ formula_class_assoc_r3 <- as.formula(paste(
   "strata(calendar_3month) +", COV_CLASS_ASSOC_R3
 ))
 
+# Fit class assoc r3
 fit_class_assoc_r3 <- function(class_label,
                                period = c("full_year", "rsv_season")) {
   period <- match.arg(period)

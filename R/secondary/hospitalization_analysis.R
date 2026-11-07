@@ -1,3 +1,4 @@
+# Hospitalization analysis
 
 
 suppressPackageStartupMessages({library(haven);library(dplyr);library(tidyr);library(readr);library(purrr);library(broom);library(survival)})
@@ -70,6 +71,7 @@ periods<-c("full_year","RSV_season","non_RSV_season")
 valid_jan_ids<-valid_link$infant_study_id_0113
 crude_formula<-Surv(tstart,tstop,event)~exposure_arm+strata(calendar_month)
 
+# Fit one set
 fit_one_set<-function(e,label,period){
   e2<-e %>% transmute(infant_study_id=infant_study_id_0113,abx_days)
 

@@ -1,3 +1,4 @@
+# Repeat effectiveness models by RSV season
 
 
 library(haven)
@@ -171,6 +172,7 @@ analytic_events <- eligible_cohort %>%
 print(analytic_events %>% count(exclude_route_primary))
 print(analytic_events %>% count(exclude_route_sensitivity))
 
+# Construct antibiotic dispensing event records
 build_outcome_events <- function(analyzable_col) {
   base <- analytic_events %>%
     filter(.data[[analyzable_col]] == TRUE, abx_days > 0)
@@ -200,12 +202,14 @@ composite_overlap_check <- bind_rows(
   count(n_composites)
 print(composite_overlap_check)
 
+# Construct diagnosis-specific outcome events
 build_diagnosis_events <- function(flag_col, analyzable_col = "analyzable_event_primary") {
   analytic_events %>%
     filter(.data[[analyzable_col]] == TRUE, abx_days > 0, .data[[flag_col]] == 1) %>%
     distinct(infant_study_id, abx_days)
 }
 
+# Construct antibiotic class-specific events
 build_class_events <- function(class_name, analyzable_col = "analyzable_event_primary") {
   analytic_events %>%
     filter(.data[[analyzable_col]] == TRUE, abx_days > 0, abx_class == class_name) %>%
@@ -231,6 +235,7 @@ no_flag_events <- analytic_events %>%
 print(no_flag_events %>% count(abx_class, sort = TRUE), n = Inf)
 print(no_flag_events %>% count(abx_route, sort = TRUE), n = Inf)
 
+# Collapse events within the specified washout window
 apply_washout <- function(events_df, washout_days) {
   events_df %>%
     arrange(infant_study_id, abx_days) %>%
@@ -306,6 +311,7 @@ print(residual_ambiguous_check)
 eligible_cohort <- eligible_cohort %>%
   mutate(mab_history = mab_yn == 1 & !is.na(mab_days))
 print(eligible_cohort %>% count(mab_history))
+# Identify changes in nirsevimab exposure status
 build_mab_state_changes <- function(cohort, buffer_days, max_days = MAB_MAX_DAYS_POST) {
   windows <- cohort %>%
     filter(mab_history) %>%
@@ -383,6 +389,7 @@ both_composition_check <- cohort_full %>%
     .groups = "drop"
   )
 print(both_composition_check)
+# Determine routine vaccination status over follow-up
 build_utd_at <- function(df, day_col) {
   df %>%
     mutate(
@@ -449,6 +456,7 @@ build_utd_at <- function(df, day_col) {
     select(-utd_all_num)
 }
 
+# Define RSV-season boundaries for follow-up
 build_season_cutpoints <- function(cohort) {
   cohort %>%
     select(infant_study_id, index_date) %>%
@@ -491,6 +499,7 @@ build_season_cutpoints <- function(cohort) {
     )
 }
 
+# Split follow-up into analysis intervals
 make_analysis_blocks <- function(cohort, buffer_days = MAB_MIN_DAYS_POST,
                                  label = "unnamed") {
   list(
@@ -521,6 +530,7 @@ print(
 
 blocks_primary <- make_analysis_blocks(cohort_primary, label = "never_both")
 blocks_full    <- make_analysis_blocks(cohort_full,    label = "both_retained")
+# Construct counting-process records
 build_cp <- function(outcome_events, blocks = blocks_primary,
                      maternal_exposure_flag = "rsv_valid") {
 
@@ -648,6 +658,7 @@ ag_formula <- as.formula(paste(
   "Surv(tstart, tstop, event) ~ exposure_arm + strata(calendar_month) +", COVARIATE_TERMS
 ))
 
+# Fit the Andersen-Gill recurrent-event model
 fit_ag <- function(md, formula = ag_formula) {
 
   coxph(formula, data = md, cluster = mom_study_id, ties = "efron", model = TRUE)

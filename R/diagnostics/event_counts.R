@@ -1,3 +1,4 @@
+# Event counts
 
 
 library(dplyr)
@@ -6,6 +7,7 @@ library(tidyr)
 stopifnot(exists('model_data_primary'), exists('model_data_fullyear'),
           exists('model_data_out_of_season'))
 
+# Summarize abx arm
 summarize_abx_arm <- function(md, analysis_name) {
   required <- c('infant_study_id', 'exposure_arm', 'tstart', 'tstop', 'event')
   stopifnot(all(required %in% names(md)))

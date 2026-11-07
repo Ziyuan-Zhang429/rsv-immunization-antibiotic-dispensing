@@ -1,3 +1,4 @@
+# Estimate standardized antibiotic courses averted
 
 
 library(survival)
@@ -20,18 +21,21 @@ truncate_cp <- function(md, cutoff) md %>%
   mutate(event = if_else(tstop > cutoff, 0L, event), tstop = pmin(tstop, cutoff)) %>%
   filter(tstop > tstart)
 
+# Fit the Andersen-Gill recurrent-event model
 fit_ag <- function(md, cutoff, formula = ag_formula) {
   d <- truncate_cp(md, cutoff)
   list(fit = coxph(formula, data = d, cluster = mom_study_id,
                    ties = "efron", model = TRUE), data = d)
 }
 
+# Extract estimated baseline cumulative hazards
 baseline_funs <- function(fit) suppressWarnings(basehaz(fit, centered = FALSE)) %>%
   mutate(stratum_key = sub("^stratum=", "", as.character(strata))) %>%
   arrange(stratum_key, time) %>%
   split(.$stratum_key) %>%
   map(~stepfun(.x$time, c(0, .x$hazard), right = FALSE))
 
+# Calculate expected recurrent events
 expected_events <- function(fit, md, H0, arm = NULL, id_col = "infant_study_id") {
   d <- md
   if (!is.null(arm)) d$exposure_arm <- factor(arm, levels = levels(md$exposure_arm))
@@ -48,6 +52,7 @@ expected_events <- function(fit, md, H0, arm = NULL, id_col = "infant_study_id")
     summarise(expected_events = sum(.expected), .groups = "drop")
 }
 
+# Standardize predictions to the treated population
 standardize_att <- function(fit, md, H0, exposed_arm, label,
                             id_col = "infant_study_id") {
   ids <- md %>% filter(exposure_arm == exposed_arm) %>%
@@ -67,6 +72,7 @@ standardize_att <- function(fit, md, H0, exposed_arm, label,
          courses_averted_per_100 = 100 * mean(z$diff))
 }
 
+# Standardize both
 standardize_both <- function(fit, md, H0, id_col = "infant_study_id") bind_rows(
   standardize_att(fit, md, H0, "a_maternal_vax_only", "Maternal RSV vaccine", id_col),
   standardize_att(fit, md, H0, "b_nirsevimab_only", "Nirsevimab", id_col)
@@ -77,6 +83,7 @@ run_cutoffs <- function(md) map_dfr(c(90, 180), function(cutoff) {
   standardize_both(x$fit, x$data, H0) %>% mutate(cutoff_days = cutoff, .before = 1)
 })
 
+# Bootstrap standardized absolute effects
 bootstrap_courses <- function(md, B = BOOTSTRAP_REPLICATES,
                               id_col = "infant_study_id", cluster_col = "mom_study_id",
                               seed = 20260817) {
@@ -99,6 +106,7 @@ bootstrap_courses <- function(md, B = BOOTSTRAP_REPLICATES,
   }, .options = furrr_options(seed = TRUE))
 }
 
+# Summarize bootstrap estimates and intervals
 summarize_bootstrap <- function(point, boot) boot %>%
   group_by(exposure, cutoff_days) %>%
   summarise(ci_low = quantile(courses_averted_per_100, .025, na.rm = TRUE),
@@ -107,6 +115,7 @@ summarize_bootstrap <- function(point, boot) boot %>%
   left_join(point, by = c("exposure", "cutoff_days")) %>%
   arrange(exposure, cutoff_days)
 
+# Run analysis
 run_analysis <- function(md, panel, seed) {
   point <- run_cutoffs(md); print(point, n = Inf)
   plan(multisession, workers = n_workers)
@@ -127,6 +136,7 @@ figure4_data <- bind_rows(
 
 invisible(NULL); print(figure4_data, n = Inf)
 
+# Plot standardized absolute-effect estimates
 make_courses_averted_plot <- function(df) {
   FONT <- 11; PAD <- 2
   panel_order <- c("Full year", "RSV season")
